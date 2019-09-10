@@ -4,9 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class TelnetRequestDataTagsEvent extends TelnetEvent
+public class TelnetRequestDataTagsEvent extends Event
 {
 
     private static final HandlerList handlers = new HandlerList();
@@ -14,6 +15,7 @@ public class TelnetRequestDataTagsEvent extends TelnetEvent
 
     public TelnetRequestDataTagsEvent()
     {
+        super(!Bukkit.getServer().isPrimaryThread());
         for (final Player player : Bukkit.getServer().getOnlinePlayers())
         {
             dataTags.put(player, new HashMap<String, Object>());
