@@ -39,7 +39,8 @@ public final class ClientSession extends Thread
     private String username = "";
     private volatile boolean terminated = false;
     private volatile boolean authenticated = false;
-    private volatile boolean enhancedMode = false;
+    private boolean enhancedMode = false;
+    private boolean enhancedPlusMode = false;
 
     public ClientSession(TelnetServer telnet, Socket clientSocket)
     {
@@ -84,6 +85,8 @@ public final class ClientSession extends Thread
         mainLoop();
 
         syncTerminateSession();
+
+        telnet.getPlugin().listener.triggerUsageUpdates();
     }
 
     public boolean syncIsAuthenticated()
@@ -472,6 +475,11 @@ public final class ClientSession extends Thread
                 telnet.getPlugin().listener.triggerPlayerListUpdates();
             }
         }
+        else if ("telnet.enhancedplus".equalsIgnoreCase(command))
+        {
+            enhancedPlusMode = !enhancedPlusMode;
+            writeLine((enhancedPlusMode ? "A" : "Dea") + "ctivated enhanced+ mode.");
+        }
         else
         {
             writeLine("Invalid telnet command, use \"telnet.help\" to view help.");
@@ -493,6 +501,24 @@ public final class ClientSession extends Thread
             }
 
             writeLine("playerList~" + playerListData);
+        }
+    }
+
+    public void syncUsageUpdate(String usageData)
+    {
+        if (!enhancedPlusMode)
+        {
+            return;
+        }
+
+        synchronized (clientSocket)
+        {
+            if (clientSocket.isClosed())
+            {
+                return;
+            }
+
+            writeLine("usage~" + usageData);
         }
     }
 }

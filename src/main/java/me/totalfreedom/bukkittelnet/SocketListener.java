@@ -131,6 +131,20 @@ public class SocketListener extends Thread
         }
     }
 
+    public void triggerDataUsageUpdates(final String usageData)
+    {
+        final Iterator<ClientSession> it = clientSessions.iterator();
+
+        while (it.hasNext())
+        {
+            final ClientSession session = it.next();
+            if (session != null)
+            {
+                session.syncUsageUpdate(usageData);
+            }
+        }
+    }
+
     public void stopServer()
     {
         try

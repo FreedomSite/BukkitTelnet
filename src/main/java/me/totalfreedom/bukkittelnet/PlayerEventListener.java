@@ -1,9 +1,12 @@
 package me.totalfreedom.bukkittelnet;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import me.totalfreedom.bukkittelnet.api.TelnetRequestDataTagsEvent;
+import me.totalfreedom.bukkittelnet.api.TelnetRequestUsageEvent;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -12,13 +15,17 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import com.earth2me.essentials.Essentials;
 
 public class PlayerEventListener implements Listener
 {
+
+    private static Essentials essentials = null;
 
     private final BukkitTelnet plugin;
 
@@ -37,6 +44,18 @@ public class PlayerEventListener implements Listener
     public void onPlayerQuit(PlayerQuitEvent event)
     {
         triggerPlayerListUpdates();
+    }
+
+    public static Essentials getEssentials()
+    {
+        Plugin ess = Bukkit.getPluginManager().getPlugin("Essentials");
+        if (ess instanceof Essentials)
+        {
+            essentials = (Essentials)ess;
+            return essentials;
+        }
+        return null;
+
     }
 
     private static BukkitTask updateTask = null;
@@ -98,5 +117,59 @@ public class PlayerEventListener implements Listener
         response.put("players", players);
 
         return response.toJSONString();
+    }
+
+    private static BukkitTask usageUpdateTask = null;
+
+    // Just putting this stuff here
+    public void triggerUsageUpdates()
+    {
+        if (usageUpdateTask != null)
+        {
+            return;
+        }
+
+        usageUpdateTask= new BukkitRunnable()
+        {
+            @Override
+            public void run()
+            {
+                final SocketListener socketListener = plugin.telnet.getSocketListener();
+                if (socketListener != null)
+                {
+                    final TelnetRequestUsageEvent event = new TelnetRequestUsageEvent();
+                    Bukkit.getServer().getPluginManager().callEvent(event);
+                    socketListener.triggerDataUsageUpdates(generateUsageStats());
+                }
+            }
+        }.runTaskTimer(plugin, 100L, 100L); // every 5 seconds
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private static String generateUsageStats()
+    {
+        if (essentials == null)
+        {
+            essentials = getEssentials();
+        }
+
+        final HashMap<String, String> info = new HashMap<>();
+
+        String cpuUsage = null;
+        String ramUsage = null;
+        String tps = null;
+
+        if (essentials != null)
+        {
+            tps = String.valueOf(String.valueOf(new BigDecimal(essentials.getTimer().getAverageTPS()).setScale(1, RoundingMode.CEILING)));
+        }
+
+        info.put("tps", tps);
+
+        final JSONObject data = new JSONObject();
+        data.putAll(info);
+
+        return data.toJSONString();
     }
 }
