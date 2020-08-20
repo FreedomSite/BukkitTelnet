@@ -1,31 +1,29 @@
 package me.totalfreedom.bukkittelnet;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import me.totalfreedom.bukkittelnet.api.TelnetRequestDataTagsEvent;
 import me.totalfreedom.bukkittelnet.api.TelnetRequestUsageEvent;
+import net.minecraft.server.v1_16_R1.MinecraftServer;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import com.earth2me.essentials.Essentials;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class PlayerEventListener implements Listener
 {
 
-    private static Essentials essentials = null;
 
     private final BukkitTelnet plugin;
 
@@ -44,18 +42,6 @@ public class PlayerEventListener implements Listener
     public void onPlayerQuit(PlayerQuitEvent event)
     {
         triggerPlayerListUpdates();
-    }
-
-    public static Essentials getEssentials()
-    {
-        Plugin ess = Bukkit.getPluginManager().getPlugin("Essentials");
-        if (ess instanceof Essentials)
-        {
-            essentials = (Essentials)ess;
-            return essentials;
-        }
-        return null;
-
     }
 
     private static BukkitTask updateTask = null;
@@ -149,10 +135,6 @@ public class PlayerEventListener implements Listener
     @SuppressWarnings("unchecked")
     private static String generateUsageStats()
     {
-        if (essentials == null)
-        {
-            essentials = getEssentials();
-        }
 
         final HashMap<String, String> info = new HashMap<>();
 
@@ -160,10 +142,8 @@ public class PlayerEventListener implements Listener
         String ramUsage = null;
         String tps = null;
 
-        if (essentials != null)
-        {
-            tps = String.valueOf(String.valueOf(new BigDecimal(essentials.getTimer().getAverageTPS()).setScale(1, RoundingMode.CEILING)));
-        }
+        MinecraftServer server = ((CraftServer)Bukkit.getServer()).getServer();
+        tps = String.valueOf(server.recentTps[0]);
 
         info.put("tps", tps);
 
